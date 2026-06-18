@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Student Management System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --sidebar-bg: #161b27;
+    --card-bg: #1c2333;
+    --border: #2a3347;
+    --accent: #4f8ef7;
+    --accent2: #34d399;
+    --danger: #f87171;
+    --warn: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #7b8aa0;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; background: var(--sidebar-bg); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0; flex-shrink: 0; min-height: 100vh;
+  }
+  .sidebar-brand {
+    padding: 20px 18px 16px; border-bottom: 1px solid var(--border);
+  }
+  .sidebar-brand .logo { font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: 1px; }
+  .sidebar-brand .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .nav { padding: 14px 0; flex: 1; }
+  .nav a {
+    display: flex; align-items: center; gap: 10px; padding: 10px 18px;
+    color: var(--muted); text-decoration: none; font-size: 14px; transition: all .15s;
+    border-left: 3px solid transparent;
+  }
+  .nav a:hover { color: var(--text); background: rgba(79,142,247,.07); }
+  .nav a.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,142,247,.1); }
+  .nav a .icon { width: 18px; text-align: center; }
+  .sidebar-footer { padding: 12px 18px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
+  .topbar {
+    padding: 14px 28px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--sidebar-bg);
+  }
+  .topbar h2 { font-size: 18px; font-weight: 700; }
+  .topbar-actions { display: flex; gap: 10px; }
+  .btn {
+    padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: .15s;
+  }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3b7de9; }
+  .btn-danger { background: var(--danger); color: #fff; font-size: 12px; padding: 5px 12px; }
+  .btn-success { background: var(--accent2); color: #111; font-size: 12px; padding: 5px 12px; }
+
+  /* CONTENT */
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STAT CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; text-align: center;
+  }
+  .stat-card .val { font-size: 28px; font-weight: 800; }
+  .stat-card .lbl { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .stat-card.blue .val { color: var(--accent); }
+  .stat-card.green .val { color: var(--accent2); }
+  .stat-card.red .val { color: var(--danger); }
+  .stat-card.yellow .val { color: var(--warn); }
+
+  /* CHARTS ROW */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px;
+  }
+  .card h3 { font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* GRADE BARS */
+  .grade-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; font-size: 13px; }
+  .grade-bar-row .label { width: 54px; color: var(--muted); }
+  .grade-bar-row .bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 8px; }
+  .grade-bar-row .bar-fill { height: 8px; border-radius: 4px; transition: width .6s; }
+  .grade-bar-row .count { width: 20px; text-align: right; color: var(--muted); font-size: 12px; }
+
+  /* DONUT */
+  .donut-wrap { display: flex; justify-content: center; align-items: center; gap: 20px; }
+  .donut-legend { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+  .donut-legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+  /* TOP STUDENTS */
+  .top-student { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .rank { width: 22px; height: 22px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .rank.gold { background: #fbbf24; color: #111; }
+  .rank.silver { background: #94a3b8; color: #111; }
+  .rank.bronze { background: #b45309; color: #fff; }
+  .top-student .info { flex: 1; }
+  .top-student .name { font-size: 13px; font-weight: 600; }
+  .top-student .roll { font-size: 11px; color: var(--muted); }
+  .top-student .score { font-size: 15px; font-weight: 800; color: var(--accent2); }
+
+  /* ACTIVITY */
+  .activity-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 5px; flex-shrink: 0; }
+
+  /* TABLE PAGE */
+  .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .search-box {
+    padding: 8px 14px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--card-bg); color: var(--text); font-size: 13px; width: 240px;
+    outline: none;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+  th { background: var(--sidebar-bg); padding: 12px 16px; text-align: left; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  td { padding: 12px 16px; font-size: 14px; border-top: 1px solid var(--border); }
+  tr:hover td { background: rgba(79,142,247,.04); }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  }
+  .badge-pass { background: rgba(52,211,153,.15); color: var(--accent2); }
+  .badge-fail { background: rgba(248,113,113,.15); color: var(--danger); }
+  .badge-a { background: rgba(79,142,247,.15); color: var(--accent); }
+  .badge-b { background: rgba(52,211,153,.15); color: var(--accent2); }
+  .badge-c { background: rgba(251,191,36,.15); color: var(--warn); }
+  .badge-d { background: rgba(248,113,113,.15); color: var(--danger); }
+  .badge-f { background: rgba(148,163,184,.15); color: var(--muted); }
+
+  /* ADD STUDENT FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  input, select {
+    padding: 9px 13px; border-radius: 7px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font-size: 14px; outline: none; transition: .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  .form-actions { margin-top: 20px; display: flex; gap: 10px; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 999; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 420px; max-width: 95vw; }
+  .modal h3 { margin-bottom: 18px; font-size: 16px; }
+
+  /* RESULTS PAGE */
+  .results-filter { display: flex; gap: 10px; margin-bottom: 18px; }
+  .filter-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; transition: .15s; }
+  .filter-btn.active, .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(79,142,247,.1); }
+
+  /* RESPONSIVE */
+  @media(max-width:900px) {
+    .sidebar { width: 60px; }
+    .sidebar-brand .sub, .nav a span, .sidebar-footer { display: none; }
+    .nav a { padding: 12px; justify-content: center; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media(max-width:600px) {
+    .content { padding: 14px; }
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">SMS</div>
+    <div class="sub">Student Management System</div>
+  </div>
+  <div class="nav">
+    <a href="#" class="active" onclick="showPage('dashboard',this)">
+      <span class="icon">📊</span><span>Dashboard</span>
+    </a>
+    <a href="#" onclick="showPage('students',this)">
+      <span class="icon">🎓</span><span>Students</span>
+    </a>
+    <a href="#" onclick="showPage('add',this)">
+      <span class="icon">➕</span><span>Add Student</span>
+    </a>
+    <a href="#" onclick="showPage('attendance',this)">
+      <span class="icon">📋</span><span>Attendance</span>
+    </a>
+    <a href="#" onclick="showPage('results',this)">
+      <span class="icon">📝</span><span>Results</span>
+    </a>
+    <a href="#" onclick="showPage('reports',this)">
+      <span class="icon">📁</span><span>Reports</span>
+    </a>
+  </div>
+  <div class="sidebar-footer">v2.0 | Data in memory</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="window.print()">🖨 Print</button>
+      <button class="btn btn-primary" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="charts-row">
+        <div class="card">
+          <h3>Grade Distribution</h3>
+          <div id="grade-bars"></div>
+        </div>
+        <div class="card">
+          <h3>Pass vs Fail</h3>
+          <div class="donut-wrap">
+            <canvas id="donut" width="110" height="110"></canvas>
+            <div class="donut-legend" id="donut-legend"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>🏆 Top 5 Students</h3>
+          <div id="top-students"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📅 Recent Activity</h3>
+        <div id="activity-log"></div>
+      </div>
+    </div>
+
+    <!-- STUDENTS PAGE -->
+    <div id="page-students" class="page">
+      <div class="table-controls">
+        <input class="search-box" type="text" placeholder="🔍 Search students…" oninput="filterTable(this.value)"/>
+        <button class="btn btn-primary" onclick="showPage('add', document.querySelector('.nav a:nth-child(3)'))">+ Add Student</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Name</th><th>Roll Number</th><th>Marks</th><th>Grade</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="student-table-body"></tbody>
+      </table>
+    </div>
+
+    <!-- ADD STUDENT PAGE -->
+    <div id="page-add" class="page">
+      <div class="card" style="max-width:600px">
+        <h3>Add New Student</h3>
+        <div style="height:16px"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input id="inp-name" type="text" placeholder="e.g. Rahul Sharma"/>
+          </div>
+          <div class="form-group">
+            <label>Roll Number</label>
+            <input id="inp-roll" type="text" placeholder="e.g. 2503201000999"/>
+          </div>
+          <div class="form-group">
+            <label>Marks (out of 100)</label>
+            <input id="inp-marks" type="number" min="0" max="100" placeholder="0–100"/>
+          </div>
+          <div class="form-group">
+            <label>Subject</label>
+            <select id="inp-subject">
+              <option>Web Development</option>
+              <option>Data Structures</option>
+              <option>Mathematics</option>
+              <option>Physics</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addStudent()">✅ Add Student</button>
+          <button class="btn btn-outline" onclick="clearForm()">🗑 Clear</button>
+        </div>
+        <p id="form-msg" style="margin-top:12px;font-size:13px;color:var(--accent2)"></p>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE PAGE -->
+    <div id="page-attendance" class="page">
+      <div class="card">
+        <h3>Mark Attendance</h3>
+        <div style="height:12px"></div>
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Roll</th><th>Present</th></tr></thead>
+          <tbody id="attendance-body"></tbody>
+        </table>
+        <div style="margin-top:16px">
+          <button class="btn btn-primary" onclick="saveAttendance()">Save Attendance</button>
+          <span id="att-msg" style="margin-left:12px;font-size:13px;color:var(--accent2)"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS PAGE -->
+    <div id="page-results" class="page">
+      <div class="results-filter">
+        <button class="filter-btn active" onclick="filterResults('all',this)">All</button>
+        <button class="filter-btn" onclick="filterResults('pass',this)">Pass</button>
+        <button class="filter-btn" onclick="filterResults('fail',this)">Fail</button>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Roll</th><th>Marks</th><th>Grade</th><th>Status</th><th>Remarks</th></tr></thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <!-- REPORTS PAGE -->
+    <div id="page-reports" class="page">
+      <div class="charts-row">
+        <div class="card">
+          <h3>Summary Report</h3>
+          <div id="report-summary" style="font-size:14px;line-height:2"></div>
+        </div>
+        <div class="card">
+          <h3>Grade Breakdown</h3>
+          <div id="report-grades" style="font-size:14px;line-height:2"></div>
+        </div>
+        <div class="card">
+          <h3>Performance Tiers</h3>
+          <div id="report-tiers" style="font-size:14px;line-height:2"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:0">
+        <h3>All Students — Full Report</h3>
+        <div style="height:10px"></div>
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Roll</th><th>Marks</th><th>Grade</th><th>Status</th><th>Percentile</th></tr></thead>
+          <tbody id="full-report-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ Edit Student Marks</h3>
+    <input type="hidden" id="edit-idx"/>
+    <div class="form-group" style="margin-bottom:14px">
+      <label>Student Name</label>
+      <input id="edit-name" type="text" readonly style="opacity:.6"/>
+    </div>
+    <div class="form-group">
+      <label>New Marks (0–100)</label>
+      <input id="edit-marks" type="number" min="0" max="100"/>
+    </div>
+    <div class="form-actions" style="margin-top:18px">
+      <button class="btn btn-primary" onclick="saveEdit()">Save</button>
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let students = [
+  { name: "Anish Kumar Singh",    roll: "2503201000200", marks: 30 },
+  { name: "Avinash Chaurasia",    roll: "2503201000352", marks: 100 },
+  { name: "Baibhav Kumar",        roll: "2503201000420", marks: 00 },
+  { name: "Divyanshi Srivastava",  roll: "2503201000556", marks: 20 },
+  { name: "Manasi Patel",          roll: "2503201000676", marks: 15 },
+  { name: "Prashant Kumar",       roll: "2503201000789", marks: 0 },
+];
+
+let activityLog = [
+  { text: "System initialized with 6 students", time: now() },
+];
+
+let attendance = {};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function grade(m) {
+  if (m >= 90) return 'A+';
+  if (m >= 80) return 'A';
+  if (m >= 70) return 'B';
+  if (m >= 60) return 'C';
+  if (m >= 33) return 'D';
+  return 'F';
+}
+function gradeClass(g) {
+  return { 'A+': 'badge-a', 'A': 'badge-a', 'B': 'badge-b', 'C': 'badge-c', 'D': 'badge-d', 'F': 'badge-f' }[g] || 'badge-f';
+}
+function pass(m) { return m >= 33; }
+function now() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function log(txt) { activityLog.unshift({ text: txt, time: now() }); }
+function avg() { return students.length ? Math.round(students.reduce((s,st) => s + st.marks, 0) / students.length) : 0; }
+function topStudents() { return [...students].sort((a,b) => b.marks - a.marks).slice(0,5); }
+function gradeCounts() {
+  const c = { 'A+':0, 'A':0, 'B':0, 'C':0, 'D':0, 'F':0 };
+  students.forEach(s => c[grade(s.marks)]++);
+  return c;
+}
+function percentile(idx) {
+  const sorted = [...students].sort((a,b) => a.marks - b.marks);
+  const rank = sorted.findIndex(s => s === students[idx]);
+  return students.length <= 1 ? 100 : Math.round((rank / (students.length - 1)) * 100);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = { dashboard:'Dashboard', students:'Students', add:'Add Student', attendance:'Attendance', results:'Results', reports:'Reports' };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  renderAll();
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderStats(); renderGradeBars(); renderDonut(); renderTopStudents();
+  renderActivity(); renderStudentTable(students); renderAttendance();
+  renderResults('all'); renderReports();
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function renderStats() {
+  const passed = students.filter(s => pass(s.marks)).length;
+  const failed = students.length - passed;
+  const avgMark = avg();
+  const avgAtt = students.length ? Math.round(Object.values(attendance).filter(Boolean).length / Math.max(students.length,1) * 100) : 0;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card blue"><div class="val">${students.length}</div><div class="lbl">Total Students</div></div>
+    <div class="stat-card green"><div class="val">${passed}</div><div class="lbl">Passed</div></div>
+    <div class="stat-card red"><div class="val">${failed}</div><div class="lbl">Failed</div></div>
+    <div class="stat-card yellow"><div class="val">${avgMark}%</div><div class="lbl">Avg Marks</div></div>
+    <div class="stat-card"><div class="val">${avgAtt}%</div><div class="lbl">Avg Attendance</div></div>
+  `;
+}
+
+// ── GRADE BARS ────────────────────────────────────────────────────────────────
+function renderGradeBars() {
+  const gc = gradeCounts(); const max = Math.max(...Object.values(gc), 1);
+  const colors = { 'A+':'#4f8ef7','A':'#4f8ef7','B':'#34d399','C':'#fbbf24','D':'#f87171','F':'#94a3b8' };
+  document.getElementById('grade-bars').innerHTML = Object.entries(gc).map(([g,c]) => `
+    <div class="grade-bar-row">
+      <div class="label">Grade ${g}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c/max)*100}%;background:${colors[g]}"></div></div>
+      <div class="count">${c}</div>
+    </div>
+  `).join('');
+}
+
+// ── DONUT ─────────────────────────────────────────────────────────────────────
+function renderDonut() {
+  const passed = students.filter(s => pass(s.marks)).length;
+  const failed = students.length - passed;
+  const total = students.length || 1;
+  const canvas = document.getElementById('donut');
+  const ctx = canvas.getContext('2d');
+  const cx = 55, cy = 55, r = 42, lineW = 12;
+  ctx.clearRect(0,0,110,110);
+  const passAngle = (passed/total) * 2 * Math.PI;
+  // fail slice
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI); ctx.strokeStyle='#2a3347'; ctx.lineWidth=lineW; ctx.stroke();
+  // pass slice
+  ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+passAngle); ctx.strokeStyle='#34d399'; ctx.lineWidth=lineW; ctx.stroke();
+  if (failed > 0) {
+    ctx.beginPath(); ctx.arc(cx,cy,r,-Math.PI/2+passAngle,-Math.PI/2+passAngle+(failed/total)*2*Math.PI); ctx.strokeStyle='#f87171'; ctx.lineWidth=lineW; ctx.stroke();
+  }
+  ctx.fillStyle='#e2e8f0'; ctx.font='bold 16px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(Math.round(passed/total*100)+'%', cx, cy-7);
+  ctx.font='10px sans-serif'; ctx.fillStyle='#7b8aa0'; ctx.fillText('Pass', cx, cy+8);
+
+  document.getElementById('donut-legend').innerHTML = `
+    <div><span class="dot" style="background:#34d399"></span>Passed: <b>${passed}</b></div>
+    <div><span class="dot" style="background:#f87171"></span>Failed: <b>${failed}</b></div>
+  `;
+}
+
+// ── TOP STUDENTS ──────────────────────────────────────────────────────────────
+function renderTopStudents() {
+  const top = topStudents();
+  const rankColors = ['gold','silver','bronze','',''];
+  document.getElementById('top-students').innerHTML = top.map((s,i) => `
+    <div class="top-student">
+      <div class="rank ${rankColors[i]}">${i+1}</div>
+      <div class="info">
+        <div class="name">${s.name}</div>
+        <div class="roll">${s.roll}</div>
+      </div>
+      <div class="score">${s.marks}</div>
+    </div>
+  `).join('');
+}
+
+// ── ACTIVITY ──────────────────────────────────────────────────────────────────
+function renderActivity() {
+  document.getElementById('activity-log').innerHTML = activityLog.slice(0,8).map(a => `
+    <div class="activity-item">
+      <div class="activity-dot"></div>
+      <div>${a.text} <span style="color:var(--muted);font-size:11px">— ${a.time}</span></div>
+    </div>
+  `).join('');
+}
+
+// ── STUDENT TABLE ─────────────────────────────────────────────────────────────
+function renderStudentTable(list) {
+  document.getElementById('student-table-body').innerHTML = list.map((s,i) => {
+    const g = grade(s.marks); const p = pass(s.marks);
+    return `<tr>
+      <td>${students.indexOf(s)+1}</td>
+      <td><b>${s.name}</b></td>
+      <td style="font-family:monospace;font-size:12px">${s.roll}</td>
+      <td><b>${s.marks}</b>/100</td>
+      <td><span class="badge ${gradeClass(g)}">${g}</span></td>
+      <td><span class="badge ${p?'badge-pass':'badge-fail'}">${p?'Pass':'Fail'}</span></td>
+      <td>
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="openEdit(${students.indexOf(s)})">✏ Edit</button>
+        <button class="btn btn-danger" style="margin-left:4px" onclick="deleteStudent(${students.indexOf(s)})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable(q) {
+  const filtered = students.filter(s => s.name.toLowerCase().includes(q.toLowerCase()) || s.roll.includes(q));
+  renderStudentTable(filtered);
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────────────────────
+function renderAttendance() {
+  document.getElementById('attendance-body').innerHTML = students.map((s,i) => `
+    <tr>
+      <td>${i+1}</td><td>${s.name}</td><td>${s.roll}</td>
+      <td>
+        <input type="checkbox" ${attendance[i] ? 'checked' : ''} onchange="attendance[${i}]=this.checked" style="width:18px;height:18px;cursor:pointer"/>
+      </td>
+    </tr>
+  `).join('');
+}
+function saveAttendance() {
+  log('Attendance saved for ' + students.length + ' students');
+  document.getElementById('att-msg').textContent = '✅ Saved!';
+  setTimeout(() => document.getElementById('att-msg').textContent = '', 2000);
+  renderStats();
+}
+
+// ── RESULTS ───────────────────────────────────────────────────────────────────
+function renderResults(filter) {
+  let list = students;
+  if (filter === 'pass') list = students.filter(s => pass(s.marks));
+  if (filter === 'fail') list = students.filter(s => !pass(s.marks));
+  const remarks = { 'A+':'Excellent', 'A':'Very Good', 'B':'Good', 'C':'Average', 'D':'Below Average', 'F':'Needs Improvement' };
+  document.getElementById('results-body').innerHTML = list.map((s,i) => {
+    const g = grade(s.marks); const p = pass(s.marks);
+    return `<tr>
+      <td>${students.indexOf(s)+1}</td>
+      <td>${s.name}</td>
+      <td style="font-family:monospace;font-size:12px">${s.roll}</td>
+      <td><b>${s.marks}</b></td>
+      <td><span class="badge ${gradeClass(g)}">${g}</span></td>
+      <td><span class="badge ${p?'badge-pass':'badge-fail'}">${p?'Pass':'Fail'}</span></td>
+      <td style="color:var(--muted);font-size:12px">${remarks[g]}</td>
+    </tr>`;
+  }).join('');
+}
+function filterResults(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderResults(filter);
+}
+
+// ── REPORTS ───────────────────────────────────────────────────────────────────
+function renderReports() {
+  const passed = students.filter(s => pass(s.marks)).length;
+  const gc = gradeCounts();
+  document.getElementById('report-summary').innerHTML = `
+    Total Students: <b>${students.length}</b><br>
+    Passed: <b style="color:var(--accent2)">${passed}</b><br>
+    Failed: <b style="color:var(--danger)">${students.length-passed}</b><br>
+    Average Marks: <b>${avg()}%</b><br>
+    Highest: <b>${students.length ? Math.max(...students.map(s=>s.marks)) : 0}</b><br>
+    Lowest: <b>${students.length ? Math.min(...students.map(s=>s.marks)) : 0}</b>
+  `;
+  document.getElementById('report-grades').innerHTML = Object.entries(gc).map(([g,c]) =>
+    `Grade ${g}: <b>${c}</b> student${c!==1?'s':''}<br>`
+  ).join('');
+  const tiers = [
+    { label:'Distinction (≥75)', count: students.filter(s=>s.marks>=75).length },
+    { label:'First Class (60–74)', count: students.filter(s=>s.marks>=60&&s.marks<75).length },
+    { label:'Pass (33–59)', count: students.filter(s=>s.marks>=33&&s.marks<60).length },
+    { label:'Fail (<33)', count: students.filter(s=>s.marks<33).length },
+  ];
+  document.getElementById('report-tiers').innerHTML = tiers.map(t =>
+    `${t.label}: <b>${t.count}</b><br>`
+  ).join('');
+
+  document.getElementById('full-report-body').innerHTML = [...students]
+    .sort((a,b)=>b.marks-a.marks)
+    .map((s,i) => {
+      const g=grade(s.marks); const p=pass(s.marks);
+      const pct = percentile(students.indexOf(s));
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${s.name}</td>
+        <td style="font-family:monospace;font-size:12px">${s.roll}</td>
+        <td><b>${s.marks}</b></td>
+        <td><span class="badge ${gradeClass(g)}">${g}</span></td>
+        <td><span class="badge ${p?'badge-pass':'badge-fail'}">${p?'Pass':'Fail'}</span></td>
+        <td>${pct}th</td>
+      </tr>`;
+    }).join('');
+}
+
+// ── ADD STUDENT ───────────────────────────────────────────────────────────────
+function addStudent() {
+  const name = document.getElementById('inp-name').value.trim();
+  const roll = document.getElementById('inp-roll').value.trim();
+  const marks = parseInt(document.getElementById('inp-marks').value);
+  if (!name || !roll || isNaN(marks) || marks < 0 || marks > 100) {
+    document.getElementById('form-msg').style.color = 'var(--danger)';
+    document.getElementById('form-msg').textContent = '⚠️ Please fill all fields correctly.';
+    return;
+  }
+  students.push({ name, roll, marks });
+  log('Added student: ' + name + ' (' + marks + ' marks)');
+  clearForm();
+  document.getElementById('form-msg').style.color = 'var(--accent2)';
+  document.getElementById('form-msg').textContent = '✅ Student added!';
+  setTimeout(() => document.getElementById('form-msg').textContent = '', 2500);
+  renderAll();
+}
+function clearForm() {
+  ['inp-name','inp-roll','inp-marks'].forEach(id => document.getElementById(id).value = '');
+}
+
+// ── EDIT / DELETE ─────────────────────────────────────────────────────────────
+function openEdit(idx) {
+  document.getElementById('edit-idx').value = idx;
+  document.getElementById('edit-name').value = students[idx].name;
+  document.getElementById('edit-marks').value = students[idx].marks;
+  document.getElementById('edit-modal').classList.add('open');
+}
+function saveEdit() {
+  const idx = parseInt(document.getElementById('edit-idx').value);
+  const marks = parseInt(document.getElementById('edit-marks').value);
+  if (isNaN(marks) || marks < 0 || marks > 100) return;
+  log('Updated marks for ' + students[idx].name + ': ' + students[idx].marks + ' → ' + marks);
+  students[idx].marks = marks;
+  closeModal(); renderAll();
+}
+function closeModal() { document.getElementById('edit-modal').classList.remove('open'); }
+function deleteStudent(idx) {
+  if (!confirm('Delete ' + students[idx].name + '?')) return;
+  log('Deleted student: ' + students[idx].name);
+  students.splice(idx, 1);
+  renderAll();
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = [['#','Name','Roll Number','Marks','Grade','Status']];
+  students.forEach((s,i) => rows.push([i+1, s.name, s.roll, s.marks, grade(s.marks), pass(s.marks)?'Pass':'Fail']));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'students.csv'; a.click();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderAll();
+</script>
+</body>
+</html>
