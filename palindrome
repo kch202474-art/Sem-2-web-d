@@ -1,0 +1,12 @@
+function palindrome(str) {
+  const cleaned = str.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  const reversed = cleaned.split("").reverse().join("");
+
+  return cleaned === reversed;
+}
+
+console.log(palindrome("racecar")); // true
+console.log(palindrome("hello")); // false
+console.log(palindrome("A man, a plan, a canal. Panama")); // true
+console.log(palindrome("never odd or even")); // true
